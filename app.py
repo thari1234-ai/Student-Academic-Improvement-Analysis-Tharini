@@ -5,13 +5,27 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from datetime import datetime
 
-# ================= PAGE CONFIG =================
-st.set_page_config(
-    page_title="Student Academic Improvement",
-    layout="centered"
-)
+# ================= Page Config =================
+st.set_page_config(page_title="Student Academic Improvement", layout="centered")
 
-st.title("📊 Student Academic Improvement Analysis By Tharini Ps")
+# ================= Background Image =================
+# Replace this URL with your desired Google image link
+bg_image_url = "https://images.unsplash.com/photo-1581090700227-38e6bfb57f30?auto=format&fit=crop&w=1350&q=80"
+
+page_bg_img = f"""
+<style>
+body {{
+background-image: url("{bg_image_url}");
+background-size: cover;
+background-repeat: no-repeat;
+background-attachment: fixed;
+}}
+</style>
+"""
+st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# ================= Title =================
+st.title("📊 Student Academic Improvement Analysis")
 st.caption("Polynomial Regression based student performance tracking")
 
 # ================= FORM =================
@@ -21,16 +35,15 @@ with st.form("student_form"):
     name = st.text_input("Enter Student Name")
     roll_no = st.text_input("Enter Roll Number")
 
-    st.subheader("📘 Academic Inputs")
-    semester_pct = st.number_input("Semester Percentage (%)", 0.0, 100.0, 70.0)
-    attendance_pct = st.number_input("Attendance Percentage (%)", 0.0, 100.0, 80.0)
-    homework_pct = st.number_input("Homework Completion Percentage (%)", 0.0, 100.0, 75.0)
+    st.subheader("📘 Academic Inputs (User Entered)")
+    semester_pct = st.slider("Semester Percentage (%)", 0, 100, 70)
+    attendance_pct = st.slider("Attendance Percentage (%)", 0, 100, 80)
+    homework_pct = st.slider("Homework Completion Percentage (%)", 0, 100, 75)
     study_hours = st.number_input("Average Study Hours per Day", 0.0, 12.0, 2.0)
 
     st.subheader("📅 Weekly Test Scores")
     weeks = np.array([1, 2, 3, 4, 5])
     scores = []
-
     for i in range(5):
         scores.append(st.number_input(f"Week {i+1} Test Score", 0, 100, 0))
 
@@ -40,85 +53,74 @@ with st.form("student_form"):
 if submit:
 
     if not name or not roll_no:
-        st.error("Please enter both Name and Roll Number")
+        st.error("Please enter Name and Roll Number")
         st.stop()
 
-    y = np.array(scores)
+    # Prepare data
     X = weeks.reshape(-1, 1)
+    y = np.array(scores)
 
     # Polynomial Regression
     poly = PolynomialFeatures(degree=2)
     X_poly = poly.fit_transform(X)
-
     model = LinearRegression()
     model.fit(X_poly, y)
+    coef = model.coef_
+    improvement_rate = coef[1] + 2 * coef[2] * X.max()
 
-    # ================= LOGIC FIX =================
-    avg_score = np.mean(y)
-    score_growth = y[-1] - y[0]
-
-    if avg_score >= 90 and score_growth == 0:
-        category = "High Consistent Performance"
-        bg = "#007bfe"
-
-    elif score_growth >= 15:
+    # ================= CATEGORY & Box Color =================
+    if improvement_rate > 2:
         category = "High Improvement"
-        bg = "#abe5a7"
-
-    elif score_growth >= 5:
+        box_bg = "#05ff3f"
+    elif improvement_rate >= 1:
         category = "Moderate Improvement"
-        bg = "#6a5101"
-
+        box_bg = "#f4bb00"
     else:
         category = "Low Improvement"
-        bg = "#5d040c"
+        box_bg = "#52050b"
 
     # ================= REASONS =================
     reasons = []
-
-    if category == "High Consistent Performance":
-        reasons.append("Consistently high scores across all weeks")
-        reasons.append("Student has already reached an excellent performance level")
-
-    elif category == "High Improvement":
-        reasons.append("Strong upward trend in weekly test scores")
-
-    elif category == "Moderate Improvement":
-        reasons.append("Gradual improvement with minor score fluctuations")
-
+    # Score trend reason
+    if improvement_rate > 2:
+        reasons.append("✔ Noticeable score growth over weeks")
+    elif improvement_rate >= 1:
+        reasons.append("✔ Some improvement but inconsistent performance")
     else:
-        reasons.append("Minimal score growth over weeks")
+        reasons.append("✖ Minimal score growth over weeks")
 
-    # Academic inputs reasoning
+    # Semester reason
     if semester_pct >= 75:
-        reasons.append("Good overall semester performance")
+        reasons.append("✔ Strong semester performance")
     else:
-        reasons.append("Semester performance needs improvement")
+        reasons.append("✖ Low semester percentage")
 
+    # Attendance reason
     if attendance_pct >= 85:
-        reasons.append("Consistent class attendance")
+        reasons.append("✔ Good attendance consistency")
     else:
-        reasons.append("Attendance inconsistency affected learning")
+        reasons.append("✖ Irregular attendance")
 
+    # Homework reason
     if homework_pct >= 80:
-        reasons.append("Regular homework completion")
+        reasons.append("✔ Homework completed regularly")
     else:
-        reasons.append("Irregular homework practice")
+        reasons.append("✖ Homework completion is low")
 
+    # Study hours reason
     if study_hours >= 3:
-        reasons.append("Sufficient daily study hours")
+        reasons.append("✔ Adequate daily study hours")
     else:
-        reasons.append("Insufficient daily study time")
+        reasons.append("✖ Insufficient daily study time")
 
-    # ================= OUTPUT =================
+    # ================= OUTPUT BOX =================
     st.markdown(
         f"""
-        <div style="background-color:{bg}; padding:15px; border-radius:10px">
+        <div style="background-color:{box_bg}; padding:15px; border-radius:10px; color:white;">
         <h4>📌 Improvement Category: {category}</h4>
         <b>Name:</b> {name}<br>
         <b>Roll No:</b> {roll_no}<br>
-        <b>Average Score:</b> {avg_score:.2f}<br>
-        <b>Score Growth:</b> {score_growth}<br>
+        <b>Improvement Rate:</b> {improvement_rate:.2f}<br>
         <b>Generated On:</b> {datetime.now().strftime("%d-%m-%Y %H:%M:%S")}
         </div>
         """,
@@ -134,11 +136,11 @@ if submit:
     y_plot = model.predict(poly.transform(X_plot))
 
     fig, ax = plt.subplots()
-    ax.scatter(X, y, label="Actual Scores", s=60)
-    ax.plot(X_plot, y_plot, label="Performance Trend")
+    ax.set_facecolor("#ffffff80")  # semi-transparent white background for graph
+    ax.scatter(X, y, label="Actual Scores", color="blue")
+    ax.plot(X_plot, y_plot, label="Polynomial Regression Curve", color="red")
     ax.set_xlabel("Week")
     ax.set_ylabel("Test Score")
-    ax.set_title("Academic Performance Trend")
+    ax.set_title("Academic Improvement Trend")
     ax.legend()
-
     st.pyplot(fig)
