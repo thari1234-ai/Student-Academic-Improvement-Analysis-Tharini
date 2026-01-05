@@ -10,7 +10,7 @@ st.set_page_config(page_title="Student Academic Improvement", layout="centered")
 
 # ================= Background Image =================
 # Replace this URL with your desired Google image link
-bg_image_url = "https://images.unsplash.com/photo-1581090700227-38e6bfb57f30?auto=format&fit=crop&w=1350&q=80"
+bg_image_url = "https://media.istockphoto.com/id/815520570/vector/emoticon-with-eyeglasses.jpg?s=612x612&w=0&k=20&c=cFb8r4DgffiWTKZIsUj_7ZHlX6k0b7-AxQX7wY8Y-I4="
 
 page_bg_img = f"""
 <style>
